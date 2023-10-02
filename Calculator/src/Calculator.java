@@ -1,79 +1,100 @@
-import java.util.Scanner;
+import java.util.Scanner;                               // Подключаем дерективу для ввода с клавиатуры
 
-public class Calculator {
-    public static void main(String[] args) {
-        //2+3
-        //X+V=XV
-        Converter converter = new Converter();
-        String[] actions = {"+", "-", "/", "*"};
-        String[] regexActions = {"\\+", "-", "/", "\\*"};
-        Scanner scn = new Scanner(System.in);
-        System.out.print("Введите выражение: ");
-        String exp = scn.nextLine();
-        //Определяем арифметическое действие:
-        int actionIndex=-1;
-        for (int i = 0; i < actions.length; i++) {
-            if(exp.contains(actions[i])){
-                actionIndex = i;
-                break;
+public class Calculator{
+    public static void main(String[] args){
+        Scanner input = new Scanner(System.in);
+        Main result = new Main();
+        System.out.println("Input:");                   // Запрос ввода
+        String expression = input.nextLine();           // Ввод выражения
+        String answer = result.calc(expression);        // Метод calc для объекта result
+
+
+        System.out.println("Output:\n" + answer);        // Выводим ответ
+    }
+}
+
+class Main{
+    public static String calc(String input){
+        boolean romanOrArab = false;                      // Для понимания какое число на выходе (рим или араб)
+        String exception = "throws Exception";            // Исключение
+        Main romanExamination = new Main();               // Вводим для проверки и перевода из рим в араб
+        Main arabToRoman = new Main();                    // Для перевода ответа в римские
+        int result = 0;                                   // Считает выражение
+        String[] inputSplit = input.split(" ");
+        if (inputSplit.length != 3){
+            return exception;                             // Ловим, если не 3 элемента
+        }
+        Integer firstNumber = 0;
+        Integer secondNumber = 0;
+        try {
+            firstNumber = Integer.valueOf(inputSplit[0]);
+            secondNumber = Integer.valueOf(inputSplit[2]);
+        } catch (NumberFormatException e) {                          // Ловим, если не арабское
+            try {
+                firstNumber = romanExamination.romanToArab(inputSplit[0]);
+                secondNumber = romanExamination.romanToArab(inputSplit[2]);
+                romanOrArab = true;
+            } catch (NumberFormatException ex) {                     // Ловим, если не римское
+                return exception;
             }
         }
-        //Если не нашли арифметического действия, завершаем программу
-        if(actionIndex==-1){
-            System.out.println("Некорректное выражение");
-            return;
-        }
-        //Делим строчку по найденному арифметическому знаку
 
-
-        String[] data = exp.split(regexActions[actionIndex]);
-        //Определяем, находятся ли числа в одном формате (оба римские или оба арабские)
-        if(converter.isRoman(data[0]) == converter.isRoman(data[1])){
-            int a,b;
-            //Определяем, римские ли это числа
-            boolean isRoman = converter.isRoman(data[0]);
-            if(isRoman){
-                //если римские, то конвертируем их в арабские
-                //X+V
-                //x-10
-                //v - 5
-                a = converter.romanToInt(data[0]);
-                b = converter.romanToInt(data[1]);
-
-            }else{
-                //если арабские, конвертируем их из строки в число
-                a = Integer.parseInt(data[0]);
-                b = Integer.parseInt(data[1]);
-            }
-            //выполняем с числами арифметическое действие
-            int result;
-            switch (actions[actionIndex]){
-                case "+":
-                    result = a+b;
-                    break;
-                case "-":
-                    result = a-b;
-                    break;
-                case "*":
-                    result = a*b;
-                    break;
-                default:
-                    result = a/b;
-                    break;
-            }
-            //15->XV
-            if(isRoman){
-                //если числа были римские, возвращаем результат в римском числе
-                System.out.println(converter.intToRoman(result));
-            }
-            else{
-                //если числа были арабские, возвращаем результат в арабском числе
-                System.out.println(result);
-            }
-        }else{
-            System.out.println("Числа должны быть в одном формате");
+        if ((firstNumber < 1) || (firstNumber > 10) || (secondNumber < 1) || (secondNumber > 10)){
+            return exception;                                       // Указываем диапазон значений
         }
 
+        String sign = inputSplit[1];
+        switch (sign) {
+            case "+" -> result = firstNumber + secondNumber;
+            case "-" -> result = firstNumber - secondNumber;
+            case "*" -> result = firstNumber * secondNumber;
+            case "/" -> result = firstNumber / secondNumber;
+            default -> {
+                return exception;                                    // Ловим, если не знак
+            }
+        }
 
+        String output;                                               // Наш вывод
+
+        if (romanOrArab){
+            if(result < 1){
+                return exception;
+            } else {
+                output = arabToRoman.arabToRome(result);
+            }
+        } else {
+            output = Integer.toString(result);
+        }
+
+        return output;
+    }
+
+    Integer romanToArab(String romanInput){                            // Переводим римский ввод в арабский
+        int result = 0;
+        int[] arab = {10, 9, 5, 4, 1};
+        String[] roman = {"X", "IX", "V", "IV", "I"};
+        for (int i = 0; i < arab.length; i++ ) {
+            while (romanInput.indexOf(roman[i]) == 0) {
+                result += arab[i];
+                romanInput = romanInput.substring(roman[i].length());  // Исключаем посчитанные числа
+            }
+        }
+
+        return result;
+    }
+
+    String arabToRome(int arabInput){                                  // Перевод араб в рим
+        String result = "";
+        int value = 0;
+        int[] arab = {100, 90, 50, 40, 10, 9, 5, 4, 1};
+        String[] roman = {"C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
+        for (int i = 0; i < arab.length; i++){
+            value = arabInput / arab[i];
+            for (int j = 0; j < value; j++){
+                result = result.concat(roman[i]);
+            }
+            arabInput = arabInput % arab[i];
+        }
+        return result;
     }
 }
